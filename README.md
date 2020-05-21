@@ -29,6 +29,10 @@ window.addEventListener('resize', () => {
 let xwidth = Math.round(image.width * xscale);
 let xheight = Math.round(image.height * yscale);
 
+// Need to get 2d drawing context for a canvas - obvs make some HTML like this: <canvas id="canvas"></canvas>
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+
 // drawImage()
 // arg[0] - image = image source
 // arg[1] - 0 = useful for tilesets, start from X 0 on the source image
