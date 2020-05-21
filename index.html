@@ -193,7 +193,7 @@
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       ctx.fillStyle = "#000000";
       ctx.font = "16px Roboto, Arial";
-      let statustext = `resolution: { width: ${targetResolution.width} height: ${targetResolution.height} } canvas: { height: ${canvas.height} width ${canvas.width} }`;
+      let statustext = `resolution: { width: ${targetResolution.width} height: ${targetResolution.height} } canvas: { width ${canvas.width} height: ${canvas.height} }`;
       if (image) {
         if (image.loaded) {
           statustext += ` image size { width: ${Math.round(xscale * image.width).toFixed(2)} height: ${Math.round(yscale * image.height).toFixed(2)}}`;
