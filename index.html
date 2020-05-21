@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Canvas Image Resizer by @postrobcore</title>
+    <style>
+    @import url('https://fonts.googleapis.com/css2?family=Roboto&display=swap');
+    * {
+      margin: 0;
+      padding: 0;
+    }
+    
+    html {
+      overflow: hidden;
+    }
+    body {
+      font-family: Roboto, Arial;
+      color: #000;
+    }
+    </style>
+  </head>
+  <body>
+    <!-- limits -->
+    <button style="position: fixed; right: 400px; top: 50px; width: 190px; height: 30px;" onclick="toggleLimitX()">toggle limit xscale to 1.0</button>
+    <button style="position: fixed; right: 200px; top: 50px; width: 190px; height: 30px;" onclick="toggleLimitY()">toggle limit yscale to 1.0</button>
+    <!-- change image -->
+    <input id="imageurl" type="text" style="position: fixed; right: 400px; top: 90px; width: 300px; height: 30px;" placeholder="url to image" />
+    <button style="position: fixed; right: 200px; top: 90px; width: 190px; height: 30px;" onclick="changeImage()">change image</button>
+    <!-- change resolution -->
+    <input id="resolutionwidth" type="text" style="position: fixed; right: 700px; top: 130px; width: 90px; height: 30px;" placeholder="width 1920" />
+    <input id="resolutionheight" type="text" style="position: fixed; right: 600px; top: 130px; width: 90px; height: 30px;" placeholder="height 1080" />
+    <button style="position: fixed; right: 400px; top: 130px; width: 190px; height: 30px;" onclick="changeResolution()">change resolution</button>
+    <button style="position: fixed; right: 200px; top: 130px; width: 190px; height: 30px;" onclick="toggleScaleToCanvas()">scale to canvas</button>
+    <!-- change image size -->
+    <input id="imagewidth" type="text" style="position: fixed; right: 700px; top: 170px; width: 90px; height: 30px;" placeholder="image width" />
+    <input id="imageheight" type="text" style="position: fixed; right: 600px; top: 170px; width: 90px; height: 30px;" placeholder="image height" />
+    <button style="position: fixed; right: 400px; top: 170px; width: 190px; height: 30px;" onclick="changeImageSize()">change image size</button>
+    <button style="position: fixed; right: 200px; top: 170px; width: 190px; height: 30px;" onclick="resetImageSize()">reset image size</button>
+    <p style="position: fixed; bottom: 10px; left: 10px;">by PostRobcore / <a href="https://twitter.com/postrobcore" target="_blank">Twitter</a> / <a href="https://github.com/postrobcore">GitHub</a> / <a href="https://youtube.com/c/postrobcore">YouTube</a></p>
+    <canvas id="canvas"></canvas>
+    <script>
+    const canvas = document.getElementById("canvas");
+    const ctx = canvas.getContext("2d");
+    const inputImageUrl = document.getElementById('imageurl');
+    const inputResolutionWidth = document.getElementById('resolutionwidth');
+    const inputResolutionHeight = document.getElementById('resolutionheight');
+    const inputImageWidth = document.getElementById('imagewidth');
+    const inputImageHeight = document.getElementById('imageheight');
+    const uruseiYatsuraCoverUrl = "https://upload.wikimedia.org/wikipedia/en/6/66/Urusei_Yatsura_volume_1_tankobon_cover.jpg";
+    const image = new CanvasImage(uruseiYatsuraCoverUrl);
+
+    // start with resolution of 1920 x 1080;
+    let targetResolution = { width: 1920, height: 1080 };
+    let scaleToCanvas = false;
+    let limitx = false;
+    let limity = false;
+    let xscale = 1.0;
+    let yscale = 1.0;
+
+    function CanvasImage(url) {
+      this.loaded = false;
+      this.height = 0;
+      this.width = 0;
+
+      this.changeImage = (newUrl) => {
+        this.loaded = false;
+        if (!this.baseImage) {
+          this.baseImage = new Image();
+          this.baseImage.addEventListener('load', () => {
+            this.loaded = true;
+            this.height = this.baseImage.height;
+            this.width = this.baseImage.width;
+            resize();
+          });
+        }
+
+        this.baseImage.src = newUrl;
+      }
+
+      this.setImageSize = (width, height) => {
+        this.width = width;
+        this.height = height;
+      }
+
+      this.resetImageSize = () => {
+        this.width = this.baseImage.width;
+        this.height = this.baseImage.height;
+      }
+
+      this.draw = (x, y) => {
+        if (!this.loaded) {
+          return false;
+        }
+
+        let xwidth = Math.round(this.width * xscale);
+        let xheight = Math.round(this.height * yscale);
+        ctx.drawImage(this.baseImage, 0, 0, this.baseImage.width, this.baseImage.height, x, y, xwidth, xheight);
+      }
+
+      this.changeImage(uruseiYatsuraCoverUrl);
+    }
+
+    function changeImage() {
+      let newUrl = inputImageUrl.value;
+      image.changeImage(newUrl);
+    }
+
+    function changeImageSize() {
+      let newWidth = inputImageWidth.value * 1;
+      let newHeight = inputImageHeight.value * 1;
+
+      if (!newWidth || isNaN(newWidth)) {
+        inputImageWidth.value = "not number";
+        return false;
+      }
+
+      if (!newHeight || isNaN(newHeight)) {
+        inputImageWidth.value = "not number";
+        return false;
+      }
+
+      image.setImageSize(newWidth, newHeight);
+      resize();
+    }
+
+    function changeResolution() {
+      let newWidth = inputResolutionWidth.value * 1;
+      let newHeight = inputResolutionHeight.value * 1;
+
+      if (!newWidth || isNaN(newWidth)) {
+        inputResolutionWidth.value = "not number";
+        return false;
+      }
+
+      if (!newHeight || isNaN(newHeight)) {
+        inputResolutionWidth.value = "not number";
+        return false;
+      }
+
+      scaleToCanvas = false;
+      targetResolution.width = newWidth;
+      targetResolution.height = newHeight;
+      resize();
+    }
+
+    function resetImageSize() {
+      if (image && image.loaded) {
+        image.resetImageSize();
+      }
+
+      resize();
+    }
+
+    function resize() {
+      if (scaleToCanvas) {
+        targetResolution.width = window.innerWidth;
+        targetResolution.height = window.innerHeight;
+      }
+
+      yscale = window.innerHeight / targetResolution.height;
+      xscale = window.innerWidth / targetResolution.width;
+
+      if (limity && yscale > 1.0) {
+        yscale = 1.0;
+      }
+
+      if (limitx && xscale > 1.0) {
+        xscale = 1.0;
+      }
+
+      canvas.height = window.innerHeight;
+      canvas.width = window.innerWidth;
+
+      draw();
+    }
+
+    function toggleScaleToCanvas() {
+      scaleToCanvas = !scaleToCanvas;
+      resize();
+    }
+
+    function toggleLimitX() {
+      limitx = !limitx;
+      resize();
+    }
+
+    function toggleLimitY() {
+      limity = !limity;
+      resize();
+    }
+
+    function draw() {
+      ctx.fillStyle = "#dddddd";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = "#000000";
+      ctx.font = "16px Roboto, Arial";
+      let statustext = `resolution: { width: ${targetResolution.width} height: ${targetResolution.height} } canvas: { height: ${canvas.height} width ${canvas.width} }`;
+      if (image) {
+        if (image.loaded) {
+          statustext += ` image size { width: ${Math.round(xscale * image.width).toFixed(2)} height: ${Math.round(yscale * image.height).toFixed(2)}}`;
+          statustext += ` image source { width: ${image.baseImage.width} height: ${image.baseImage.height}}`;
+        } else {
+          statustext += ' not loaded yet';
+        }
+      }
+
+      statustext += ` xscale: ${xscale.toFixed(2)}`;
+      statustext += limitx ? '🔒' : '';
+      statustext += ` yscale: ${yscale.toFixed(2)}`
+      statustext += limity ? '🔒' : '';
+      ctx.fillText(statustext, 20, 30);
+      ctx.strokeStyle = "#000";
+      ctx.strokeRect(1, 1, targetResolution.width, targetResolution.height);
+      image.draw(50, 50);
+    }
+    
+    window.addEventListener('resize', resize);
+    resize();
+    </script>
+  </body>
+</html>
